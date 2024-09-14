@@ -1,0 +1,69 @@
+name: mvn install and build docker image
+
+on:
+  workflow_call:
+    inputs:
+      java_version:
+        description: 'Java version to use'
+        required: true
+        type: string
+      version_bump:
+        description: 'Type of version bump: major, minor, or patch'
+        required: false
+        type: string
+        default: 'patch'
+jobs:
+  bump_version:
+    runs-on: ubuntu-latest
+    outputs:
+      IMAGE_TAG: ${{ steps.extract_version.outputs.IMAGE_TAG }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v3
+
+      - name: Set up Java JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: ${{ inputs.java_version }}
+          distribution: 'adopt'
+
+      - name: Bump version
+        id: bump_version
+        run: |
+          # Get current version
+          CURRENT_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          
+          # Determine the new version
+          case ${{ inputs.version_bump }} in
+            major)
+              NEW_VERSION=$(echo $CURRENT_VERSION | awk -F. -v OFS=. '{$1++; $2=0; $3=0; print}')
+              ;;
+            minor)
+              NEW_VERSION=$(echo $CURRENT_VERSION | awk -F. -v OFS=. '{$2++; $3=0; print}')
+              ;;
+            patch)
+              NEW_VERSION=$(echo $CURRENT_VERSION | awk -F. -v OFS=. '{$3++; print}')
+              ;;
+            *)
+              echo "Invalid version_bump input. Use major, minor, or patch."
+              exit 1
+              ;;
+          esac
+
+          # Set the new version in pom.xml
+          mvn versions:set -DnewVersion=${NEW_VERSION}
+          mvn versions:commit
+
+          # Output the new version
+          echo "NEW_VERSION=${NEW_VERSION}" >> $GITHUB_ENV
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+      - name: Commit version bump
+        run: |
+          git add pom.xml
+          git commit -m "Bump version to ${{ env.NEW_VERSION }}"
+          git push
