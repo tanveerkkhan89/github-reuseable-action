@@ -1,0 +1,76 @@
+name: Install Kubectl and Helm
+
+on:
+  workflow_call:
+    inputs:
+      eks_cluster_name:
+        description: 'The name of the EKS cluster'
+        required: true
+        type: string
+      helm_script_directory:
+        description: 'Directory where the Helm deployment script is located'
+        required: true
+        type: string
+        default: './'
+      helm_script_name:
+        description: 'Name of the bash script to deploy the Helm chart'
+        required: true
+        type: string
+        default: "helm_deploy.sh"
+      helm_script_args:
+        description: 'Arguments to pass to the Helm deployment script'
+        required: false
+        type: string
+        default: ''
+      aws_region:
+        description: 'The AWS region to use'
+        required: false
+        default: 'us-east-2'
+        type: string
+    secrets:
+      AWS_ACCESS_KEY_ID:
+        description: 'AWS Access Key ID'
+        required: true
+      AWS_SECRET_ACCESS_KEY:
+        description: 'AWS Secret Access Key'
+        required: true
+
+jobs:
+  install_tools:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v3
+
+      - name: Install kubectl
+        run: |
+          curl -LO "https://dl.k8s.io/release/v1.23.0/bin/linux/amd64/kubectl"
+          chmod +x ./kubectl
+          sudo mv ./kubectl /usr/local/bin/kubectl
+          kubectl version --client
+
+      - name: Install Helm
+        run: |
+          curl -fsSL -o helm.tar.gz https://get.helm.sh/helm-v3.11.0-linux-amd64.tar.gz
+          tar -zxvf helm.tar.gz
+          sudo mv linux-amd64/helm /usr/local/bin/helm
+          helm version --client
+
+      - name: Configure kubectl to use EKS
+        run: |
+          aws eks update-kubeconfig --name ${{ inputs.eks_cluster_name }} --region ${{ inputs.aws_region }}
+          kubectl cluster-info
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ inputs.aws_region }}
+
+      - name: Deploy helm chart using script
+        working-directory: ${{ inputs.helm_script_directory }}
+        run: |
+          chmod +x ./${{ inputs.helm_script_name }}
+          ./${{ inputs.helm_script_name }} ${{ inputs.helm_script_args }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ inputs.aws_region }}
