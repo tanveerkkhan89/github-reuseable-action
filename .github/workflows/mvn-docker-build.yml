@@ -64,6 +64,7 @@ jobs:
             -Dsonar.organization=${{ inputs.organization}}
             -Dsonar.projectKey=${{ inputs.projectkey}}
             -Dsonar.branch.name=${{ inputs.ref_name }}
+            -Dsonar.login=$SONAR_TOKEN
 
       - name: Build with Maven
         run: mvn clean package
