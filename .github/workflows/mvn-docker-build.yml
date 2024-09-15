@@ -20,6 +20,11 @@ on:
         required: true
       DOCKER_PASSWORD:
         required: true
+      SONAR_TOKEN:
+        required: true
+      GITHUB_TOKEN:
+        required: true
+  
     outputs:
       IMAGE_TAG:
         description: 'Docker image tag'
@@ -42,6 +47,16 @@ jobs:
 
       - name: Build with Maven
         run: mvn clean package
+
+      - name: SonarCloud Scan
+        uses: sonarsource/sonarcloud-github-action@master
+        env:
+              SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+              GITHUB_TOKEN: ${{secrets.GIT_TOKEN}}
+        with:
+          args: >
+              -Dsonar.organization=tanveerkkhan89
+              -Dsonar.projectKey=my-springboot-app  
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
