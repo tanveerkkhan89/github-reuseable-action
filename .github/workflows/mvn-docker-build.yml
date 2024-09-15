@@ -63,7 +63,7 @@ jobs:
           args: >
             -Dsonar.organization=${{ inputs.organization}}
             -Dsonar.projectKey=${{ inputs.projectkey}}
-            -Dsonar.branch.name=${{ github.ref_name }}
+            -Dsonar.branch.name=${{ inputs.ref_name }}
 
       - name: Build with Maven
         run: mvn clean package
