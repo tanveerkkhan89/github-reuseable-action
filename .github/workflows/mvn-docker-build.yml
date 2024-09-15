@@ -15,24 +15,10 @@ on:
         description: 'Build arguments'
         required: false
         type: string
-      organization:
-        description: 'sonar arguments'
-        required: true
-        type: string
-      projectKey:
-        description: 'sonar arguments'
-        required: true
-        type: string
-      ref_name:
-        description: 'sonar arguments'
-        required: true
-        type: string
     secrets:
       DOCKER_USERNAME:
         required: true
       DOCKER_PASSWORD:
-        required: true
-      SONAR_TOKEN:
         required: true
     outputs:
       IMAGE_TAG:
@@ -53,19 +39,6 @@ jobs:
         with:
           java-version: ${{ inputs.java_version }}
           distribution: 'adopt'
-
-      - name: SonarCloud Scan
-        uses: sonarsource/sonarcloud-github-action@master
-        env:
-            SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-            GITHUB_TOKEN: ${{secrets.GIT_TOKEN}}
-        with:
-          args: >
-            -Dsonar.organization=${{ inputs.organization}}
-            -Dsonar.projectKey=${{ inputs.projectkey}}
-            -Dsonar.branch.name=${{ inputs.ref_name }}
-            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
-            -Dsonar.host.url=https://sonarcloud.io
 
       - name: Build with Maven
         run: mvn clean package
