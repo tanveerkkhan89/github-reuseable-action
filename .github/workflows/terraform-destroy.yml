@@ -1,6 +1,7 @@
 name: Cleanup Infrastructure
 
 on:
+  workflow_dispatch:  # This allows the workflow to be manually triggered
   workflow_call:
     inputs:
       terraform_version:
