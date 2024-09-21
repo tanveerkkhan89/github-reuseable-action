@@ -62,7 +62,7 @@ jobs:
           AWS_REGION: ${{ inputs.aws_region }}
 
       - name: Terraform Destroy
-        run: terraform destroy -lock=false -auto-approve -var-file=${{ inputs.vars_file }}
+        run: terraform destroy -lock=false -auto-approve -var-file=${{ inputs.tfvars_file }}
         working-directory: ${{ inputs.terraform_directory }}
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
